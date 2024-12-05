@@ -19,6 +19,11 @@ def reset_database():
     DB_HOST = "localhost"
     DB_PORT = "5432"
 
+    # Superuser Configuration
+    SUPERUSER_USERNAME = "admin"
+    SUPERUSER_EMAIL = "admin@example.com"
+    SUPERUSER_PASSWORD = "password"
+
     # Step 1: Remove migration files
     print("Removing migration files...")
     if migrations_path.exists():
@@ -76,12 +81,15 @@ def reset_database():
     os.system("python manage.py makemigrations")
     os.system("python manage.py migrate")
 
-    # Step 5: Create a superuser (optional)
-    create_superuser = input("Do you want to create a superuser? (yes/no): ").strip().lower()
-    if create_superuser in ['yes', 'y']:
-        os.system("python manage.py createsuperuser")
-    else:
-        print("Skipping superuser creation.")
+    # Step 5: Auto-create superuser
+    print("Creating superuser...")
+    create_superuser_command = (
+        f"python manage.py shell -c \""
+        f"from django.contrib.auth.models import User; "
+        f"User.objects.create_superuser('{SUPERUSER_USERNAME}', '{SUPERUSER_EMAIL}', '{SUPERUSER_PASSWORD}') "
+        f"if not User.objects.filter(username='{SUPERUSER_USERNAME}').exists() else print('Superuser already exists.')\""
+    )
+    os.system(create_superuser_command)
 
     print("Database reset complete!")
 

@@ -1,11 +1,11 @@
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework import status, viewsets
+from rest_framework.viewsets import ModelViewSet
 from .models import Album, Image, Metadata
 from .serializers import AlbumSerializer, ImageSerializer, MetadataSerializer
+import os
+from django.conf import settings
 
-
-# ViewSet for Albums
 class AlbumViewSet(viewsets.ModelViewSet):
     queryset = Album.objects.all()
     serializer_class = AlbumSerializer
@@ -14,15 +14,29 @@ class AlbumViewSet(viewsets.ModelViewSet):
         album = self.get_object()
         delete_images = self.request.query_params.get('delete_images', 'false').lower() == 'true'
 
+        print(f"Deleting album: {album.name} (ID: {album.id})")
         if delete_images:
-            # Delete all images associated with this album
-            album.images.all().delete()
+            for image in album.images.all():
+                image_path = os.path.join(settings.MEDIA_ROOT, str(image.file))
+                print(f"Attempting to delete image file: {image_path}")
+                if os.path.exists(image_path):
+                    try:
+                        os.remove(image_path)
+                        print(f"Deleted file: {image_path}")
+                    except Exception as e:
+                        print(f"Error deleting file {image_path}: {e}")
+                else:
+                    print(f"File not found: {image_path}")
+                image.delete()
+                print(f"Deleted image object from database: {image}")
 
         # Proceed with deleting the album
-        return super().destroy(request, *args, **kwargs)
+        response = super().destroy(request, *args, **kwargs)
+        print(f"Deleted album: {album.name} (ID: {album.id})")
+        return response
 
 
-# ViewSet for Images
+
 class ImageViewSet(ModelViewSet):
     queryset = Image.objects.all()
     serializer_class = ImageSerializer
@@ -35,18 +49,20 @@ class ImageViewSet(ModelViewSet):
         return queryset
 
     def destroy(self, request, *args, **kwargs):
-        album_id = self.request.query_params.get('album')
-        if album_id:
-            # Delete all images for the specified album
-            images = self.queryset.filter(album_id=album_id)
-            images.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        image = self.get_object()
 
-        # Delete a single image
+        # Delete the file from the media folder
+        image_path = os.path.join(settings.MEDIA_ROOT, str(image.file))
+        try:
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        except Exception as e:
+            print(f"Error deleting file {image_path}: {e}")
+
+        # Proceed with deleting the image object
         return super().destroy(request, *args, **kwargs)
 
 
-# ViewSet for Metadata
 class MetadataViewSet(viewsets.ModelViewSet):
     queryset = Metadata.objects.all()
     serializer_class = MetadataSerializer

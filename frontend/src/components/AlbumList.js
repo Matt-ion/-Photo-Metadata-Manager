@@ -44,27 +44,28 @@ const AlbumList = () => {
     };
 
     const handleDeleteWithImages = () => {
+        setDeleteWithImages(true); // Ensure we flag that images should be deleted
         setShowDeletePopup(false);
-        setShowConfirmDeleteImagesPopup(true); // Trigger the second confirmation popup
+        setShowConfirmDeleteImagesPopup(true); // Show confirmation popup
     };
 
     const deleteAlbum = async () => {
         try {
-            if (deleteWithImages) {
-                // Include the delete_images=true parameter
-                await axios.delete(`albums/${albumToDelete}/?delete_images=true`);
-            } else {
-                // Delete album only
-                await axios.delete(`albums/${albumToDelete}/`);
-            }
+            const url = deleteWithImages
+                ? `albums/${albumToDelete}/?delete_images=true`
+                : `albums/${albumToDelete}/`;
+            
+            // Delete album via API
+            await axios.delete(url);
 
-            // Remove album from the UI
+            // Remove album from UI
             setAlbums((prevAlbums) =>
                 prevAlbums.filter((album) => album.id !== albumToDelete)
             );
         } catch (error) {
             console.error('Error deleting album:', error);
         } finally {
+            // Reset states
             setShowDeletePopup(false);
             setShowConfirmDeleteImagesPopup(false);
             setAlbumToDelete(null);
@@ -91,6 +92,7 @@ const AlbumList = () => {
             </ul>
             {selectedAlbumId && <ImageList albumId={selectedAlbumId} />}
 
+            {/* Delete Album Popup */}
             {showDeletePopup && (
                 <div className="popup">
                     <h3>Delete Album</h3>
@@ -103,7 +105,7 @@ const AlbumList = () => {
                     <button
                         onClick={() => {
                             setDeleteWithImages(false);
-                            deleteAlbum();
+                            deleteAlbum(); // Delete album without images
                         }}
                     >
                         No, keep images
@@ -112,6 +114,7 @@ const AlbumList = () => {
                 </div>
             )}
 
+            {/* Confirm Delete Images Popup */}
             {showConfirmDeleteImagesPopup && (
                 <div className="popup">
                     <h3>Are you sure?</h3>
@@ -121,8 +124,7 @@ const AlbumList = () => {
                     </p>
                     <button
                         onClick={() => {
-                            setDeleteWithImages(true);
-                            deleteAlbum();
+                            deleteAlbum(); // Confirm deletion
                         }}
                     >
                         Yes, delete everything
@@ -131,6 +133,7 @@ const AlbumList = () => {
                         onClick={() => {
                             setShowConfirmDeleteImagesPopup(false);
                             setAlbumToDelete(null);
+                            setDeleteWithImages(false);
                         }}
                     >
                         Cancel
