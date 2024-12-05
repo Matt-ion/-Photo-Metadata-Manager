@@ -11,7 +11,13 @@ class Album(models.Model):
 class Image(models.Model):
     file = models.ImageField(upload_to='images/')
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name='images')
+    album = models.ForeignKey(
+        'Album',
+        on_delete=models.SET_NULL,  # Set the album to NULL instead of deleting the image
+        null=True,
+        blank=True,
+        related_name='images'
+    )
 
     def __str__(self):
         return self.file.name

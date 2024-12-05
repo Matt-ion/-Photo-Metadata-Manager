@@ -8,7 +8,8 @@ router.register(r'albums', AlbumViewSet, basename='album')
 router.register(r'images', ImageViewSet, basename='image')
 router.register(r'metadata', MetadataViewSet, basename='metadata')
 
-# Include router URLs
+# Define urlpatterns
 urlpatterns = [
     path('', include(router.urls)),
 ]
+
